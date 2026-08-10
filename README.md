@@ -1,1 +1,83 @@
-# addict
+# ONE MORE
+
+A neon survivor-roguelite that runs in a single HTML file. No dependencies, no
+assets, no build step required to play — open `dist/index.html` and it works,
+offline, on desktop or phone.
+
+Your weapons fire themselves. Your only job is to not get hit.
+
+```
+WASD / arrows      move
+1 2 3              pick a level-up card
+R / B              reroll / banish
+Esc or P           pause
+Space              one more run
+```
+
+On mobile, touch and drag anywhere to move.
+
+## The loop
+
+A run is 3–10 minutes. You die. You keep the souls. You spend them. You go again.
+
+- **Kill things → XP gems → level up → draft 1 of 3 upgrades.** Levels come every
+  few seconds early on, then slow down as the swarm speeds up.
+- **Seven weapons, ten items.** Max a weapon *and* its paired item and the next
+  card you see is a golden **evolution** — a strictly better weapon with a new
+  identity. Chests pay out pending evolutions immediately, so the best moment in
+  the game is never gated behind another level-up.
+- **Elites drop chests**, which are slot machines: usually one upgrade,
+  sometimes three, rarely five.
+- **A Warden arrives every 3 minutes**, then every 3 after that, each one harder.
+- **From 15:00, the hunt begins** — reapers that are faster than you are. Every
+  run ends eventually.
+- **Death pays out souls**, scaled by run time, kills, level and your best combo.
+  Souls buy permanent upgrades that apply to every future run, so a bad run
+  still moves you forward.
+
+Unlocks (six extra survivors, sixteen trials) are drip-fed against milestones you
+are always shown progress toward.
+
+## Layout
+
+```
+index.html        shell + all styling; loads src/*.js in order for development
+src/00-core.js    math, input, WebAudio synth (sfx + procedural soundtrack), save
+src/10-content.js characters, weapons, evolutions, items, enemies, meta, trials
+src/20-game.js    entities, combat, spatial grid, the spawn director, run lifecycle
+src/30-render.js  canvas renderer (additive-glow vector art)
+src/40-ui.js      menus, draft cards, chests, meta shop, codex, death screen
+src/50-main.js    fixed-timestep loop, hotkeys, boot
+build.js          concatenates src/*.js into a self-contained dist/index.html
+```
+
+Everything is drawn with canvas paths and every sound is synthesised at runtime,
+so the whole game is one ~140 kB file with zero network requests.
+
+## Working on it
+
+```bash
+node build.js                 # rebuild dist/index.html
+node tools/balance.js 12      # sim all 7 characters for 12 min, print a balance table
+node tools/playtest.js        # long headless run, reports any runtime errors
+node tools/perf.js            # measure real frame times under load
+```
+
+`src/` is the source of truth — edit there, then rebuild. Opening the root
+`index.html` directly also works and skips the build.
+
+In the browser console, `OM` exposes the internals (`OM.G`, `OM.SV`,
+`OM.grantSouls(5000)`, `OM.wipe()`).
+
+## Tuning notes
+
+The two levers that matter most, both in `src/20-game.js`:
+
+- `difficulty()` — enemy HP/damage/speed against run time. The `late` term is a
+  deliberate hard shoulder past 8 minutes; without it a fully-evolved build never
+  loses ground.
+- `updateDirector()` — spawn rate, swarm events, boss cadence, the reaper hunt.
+
+Player move speed (`recalc`) is only modestly above early enemy speed on purpose.
+When that gap is wide, kiting becomes free, contact weapons stop connecting, and
+a good build never takes a scratch.
