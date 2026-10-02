@@ -298,6 +298,13 @@ h3{font-size:11px;letter-spacing:.3em;color:var(--dimmer);margin:22px 0 10px}
 .sd-chip:hover,.sd-chip:focus-visible{color:var(--sd-ink);border-color:var(--sd-accent);outline:none}
 .sd-chip svg{width:14px;height:14px;fill:var(--sd-accent)}
 .sd-chip.i{width:28px;padding:0;justify-content:center;font-style:italic;font-family:Georgia,serif;font-size:14px;color:var(--sd-ink)}
+.sd-snd{position:fixed;z-index:40;top:calc(max(8px,env(safe-area-inset-top)) + 76px);left:max(16px,env(safe-area-inset-left));
+  width:34px;height:34px;padding:0;justify-content:center;opacity:.75}
+.sd-snd:hover,.sd-snd:focus-visible{opacity:1}
+.sd-snd svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sd-snd .spk{fill:currentColor;stroke:none}
+.sd-snd [data-s]{display:none}
+.sd-snd[data-state="on"] [data-s~="on"],.sd-snd[data-state="music"] [data-s~="music"],.sd-snd[data-state="mute"] [data-s~="mute"]{display:inline}
 .sd-about{position:fixed;inset:0;z-index:41;display:none;align-items:center;justify-content:center;padding:16px;
   background:rgba(5,6,13,.6);touch-action:pan-y}
 .sd-about.on{display:flex}
@@ -446,6 +453,12 @@ h3{font-size:11px;letter-spacing:.3em;color:var(--dimmer);margin:22px 0 10px}
     <a class="sd-chip" href="https://sondersoftware.com/#projects"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M36.30 9.43A14.5 14.5 0 0 0 15.80 29.94ZM32.20 18.06A14.5 14.5 0 0 1 11.70 38.57Z"/></svg>&larr; Sonder Software</a>
     <button class="sd-chip i" id="sd-info" type="button" aria-label="About this demo" aria-haspopup="dialog">i</button>
   </div>
+  <button class="sd-chip sd-snd" id="sd-snd" type="button" data-state="on" aria-label="Sound: all on">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M3 9v6h4l5 4V5L7 9z"/>
+      <g data-s="on"><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></g>
+      <g data-s="music"><path d="M15.5 8.5a5 5 0 0 1 0 7"/></g>
+      <g data-s="mute"><path d="M16 9l5 6M21 9l-5 6"/></g></svg>
+  </button>
   <div class="sd-about ui-click" id="sd-about" role="dialog" aria-modal="true" aria-labelledby="sd-title" hidden>
     <div class="sd-card">
       <h2 id="sd-title">ONE MORE</h2>
