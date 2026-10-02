@@ -49,6 +49,8 @@ const Input = {
   touch: { active: false, id: -1, ox: 0, oy: 0, x: 0, y: 0 },
   init(canvas) {
     addEventListener('keydown', e => {
+      // Keys inside the Sonder demo overlay (link, "i", about panel) belong to the page, not the game.
+      if (e.target.closest && e.target.closest('.sd')) return;
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (!this.keys[k]) this.pressed[k] = true;
       this.keys[k] = true;

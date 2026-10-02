@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#05060d">
 <title>ONE MORE</title>
+<meta name="description" content="A neon survivor-roguelite in a single HTML file. No dependencies, no assets, runs offline on a phone.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%2305060d'/%3E%3Cpath fill='%237cf3ff' d='M36.30 9.43A14.5 14.5 0 0 0 15.80 29.94ZM32.20 18.06A14.5 14.5 0 0 1 11.70 38.57Z'/%3E%3C/svg%3E">
 <style>
 /* ============ base ============ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -281,6 +283,34 @@ h3{font-size:11px;letter-spacing:.3em;color:var(--dimmer);margin:22px 0 10px}
   .reel{width:88px;height:104px}
   .rg{font-size:32px}
 }
+/* ============ Sonder demo overlay (kit tokens; light/dark follows the OS) ============ */
+.sd{--sd-bg:rgba(245,246,248,.92);--sd-ink:#15181d;--sd-soft:#596170;--sd-line:rgba(21,24,29,.14);--sd-accent:#7c1f35;
+  --sd-sans:"Geist","Helvetica Neue",Arial,sans-serif}
+@media (prefers-color-scheme:dark){.sd{--sd-bg:rgba(28,33,42,.92);--sd-ink:#eef1f6;--sd-soft:#9ca4b2;--sd-line:rgba(220,228,240,.16);--sd-accent:#d0687f}}
+.sd{position:fixed;z-index:40;font-family:var(--sd-sans);font-size:12px;color:var(--sd-ink)}
+.sd-chips{position:fixed;z-index:40;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));
+  display:flex;gap:6px;align-items:center;transition:opacity .2s}
+/* hidden while a run is live so the HUD stays clean; pause (Esc / P), level-up and death bring it back */
+#overlay:not(.on)~.sd .sd-chips{opacity:0;pointer-events:none}
+.sd-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;
+  border:1px solid var(--sd-line);background:var(--sd-bg);color:var(--sd-soft);text-decoration:none;
+  font:500 12px/1 var(--sd-sans);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);cursor:pointer}
+.sd-chip:hover,.sd-chip:focus-visible{color:var(--sd-ink);border-color:var(--sd-accent);outline:none}
+.sd-chip svg{width:14px;height:14px;fill:var(--sd-accent)}
+.sd-chip.i{width:28px;padding:0;justify-content:center;font-style:italic;font-family:Georgia,serif;font-size:14px;color:var(--sd-ink)}
+.sd-about{position:fixed;inset:0;z-index:41;display:none;align-items:center;justify-content:center;padding:16px;
+  background:rgba(5,6,13,.6);touch-action:pan-y}
+.sd-about.on{display:flex}
+.sd-card{width:min(460px,100%);max-height:100%;overflow-y:auto;background:var(--sd-bg);border:1px solid var(--sd-line);
+  border-radius:18px;padding:20px 22px;box-shadow:0 10px 30px rgba(0,0,0,.4);line-height:1.55;color:var(--sd-soft);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.sd-card h2{all:unset;display:block;font:600 16px/1.2 var(--sd-sans);color:var(--sd-ink);margin-bottom:8px;text-shadow:none}
+.sd-card h3{all:unset;display:block;font:500 11px/1 var(--sd-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--sd-accent);margin:14px 0 6px}
+.sd-card p,.sd-card li{font-size:13px;margin:0 0 6px}
+.sd-card ul{padding-left:18px;margin:0}
+.sd-card kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--sd-line);border-radius:5px;padding:1px 5px;color:var(--sd-ink)}
+.sd-card .sd-close{margin-top:14px;display:inline-flex;height:32px;padding:0 16px;border-radius:999px;align-items:center;
+  border:1px solid var(--sd-ink);background:var(--sd-ink);color:var(--sd-bg);font:500 13px/1 var(--sd-sans)}
 </style>
 </head>
 <body>
@@ -410,11 +440,39 @@ h3{font-size:11px;letter-spacing:.3em;color:var(--dimmer);margin:22px 0 10px}
 
 </div>
 
+<!-- ================= SONDER DEMO OVERLAY ================= -->
+<div class="sd">
+  <div class="sd-chips ui-click">
+    <a class="sd-chip" href="https://sondersoftware.com/#projects"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M36.30 9.43A14.5 14.5 0 0 0 15.80 29.94ZM32.20 18.06A14.5 14.5 0 0 1 11.70 38.57Z"/></svg>&larr; Sonder Software</a>
+    <button class="sd-chip i" id="sd-info" type="button" aria-label="About this demo" aria-haspopup="dialog">i</button>
+  </div>
+  <div class="sd-about ui-click" id="sd-about" role="dialog" aria-modal="true" aria-labelledby="sd-title" hidden>
+    <div class="sd-card">
+      <h2 id="sd-title">ONE MORE</h2>
+      <p>A neon survivor-roguelite in one HTML file: no dependencies, no assets, no network. Your weapons fire themselves; you just stay alive, draft upgrades, and spend the souls you earn on the next run. The graphics are canvas paths and every sound is synthesised live.</p>
+      <p><b>Real, not simulated:</b> this is the actual game, running entirely in your browser. Progress is saved only on this device.</p>
+      <h3>What it taught me</h3>
+      <ul>
+        <li><b>Game feel:</b> hit-stop, screen shake, additive glow and sound that reacts to pressure.</li>
+        <li><b>Zero-dependency builds:</b> a tiny Node script concatenates modules into one offline file.</li>
+        <li><b>Progression loops:</b> level-up drafts, evolutions, chests and permanent souls upgrades.</li>
+      </ul>
+      <h3>Controls</h3>
+      <ul>
+        <li>Move: <kbd>WASD</kbd> / arrows, or touch and drag anywhere</li>
+        <li>Level-up cards: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>, reroll <kbd>R</kbd>, banish <kbd>B</kbd></li>
+        <li>Pause: <kbd>Esc</kbd> / <kbd>P</kbd> &middot; one more run: <kbd>Space</kbd></li>
+      </ul>
+      <button class="sd-close" id="sd-close" type="button">Back to the game</button>
+    </div>
+  </div>
+</div>
 <script src="src/00-core.js"></script>
 <script src="src/10-content.js"></script>
 <script src="src/20-game.js"></script>
 <script src="src/30-render.js"></script>
 <script src="src/40-ui.js"></script>
 <script src="src/50-main.js"></script>
+<script src="src/60-about.js"></script>
 </body>
 </html>

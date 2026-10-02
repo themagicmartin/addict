@@ -1,0 +1,92 @@
+name: Demo
+
+on:
+  push:
+    tags:
+      - 'demo-v*.*.*'
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/themagicmartin/onemore-demo
+  INFRA_REPO: themagicmartin/homelab-infra
+  DEPLOYMENT_FILE: apps/demos/onemore/deployment.yaml
+
+permissions: {}
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Manual runs deploy too, so only allow them from main.
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Extract tag
+        id: tag
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "TAG=manual-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.TAG }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  bump:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {}   # only the infra PAT is used
+    steps:
+      - name: Checkout infra repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          token: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+
+      - name: Bump image tag and push
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          [[ "$TAG" =~ ^demo-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Refusing to deploy non-release tag: $TAG"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          grep -qE "image: ghcr.io/themagicmartin/onemore-demo:" "${DEPLOYMENT_FILE}" || { echo "Image line not found in ${DEPLOYMENT_FILE}"; exit 1; }
+          sed -i -E "s|(image: ghcr.io/themagicmartin/onemore-demo:).*|\1${TAG}|" "${DEPLOYMENT_FILE}"
+          git add "${DEPLOYMENT_FILE}"
+          if git diff --cached --quiet; then
+            echo "No image change to commit."
+            exit 0
+          fi
+          git commit -m "onemore-demo: deploy ${TAG}"
+          git pull --rebase
+          git push

@@ -48,6 +48,7 @@ src/20-game.js    entities, combat, spatial grid, the spawn director, run lifecy
 src/30-render.js  canvas renderer (additive-glow vector art)
 src/40-ui.js      menus, draft cards, chests, meta shop, codex, death screen
 src/50-main.js    fixed-timestep loop, hotkeys, boot
+src/60-about.js   Sonder demo overlay: "i" button + about panel (markup/CSS live in index.html)
 build.js          concatenates src/*.js into a self-contained dist/index.html
 ```
 
@@ -81,3 +82,18 @@ The two levers that matter most, both in `src/20-game.js`:
 Player move speed (`recalc`) is only modestly above early enemy speed on purpose.
 When that gap is wide, kiting becomes free, contact weapons stop connecting, and
 a good build never takes a scratch.
+
+## Public demo (onemore.sondersoftware.com)
+
+`index.html` carries a small "← Sonder Software" link and an "i" about panel; they are part of
+the single-file build, hidden while a run is live and shown on menus, pause, level-up and death.
+
+`Dockerfile` builds the game, then `tools/split-for-csp.js` splits the inline script/style into
+`app.js`/`app.css` (docker image only; `dist/index.html` stays one file) so nginx can serve
+`script-src 'self'` with no `unsafe-inline`. See `docker/nginx.conf` for the CSP and why.
+CI: `.github/workflows/demo.yaml` on `demo-vX.Y.Z` tags.
+
+```bash
+node tools/headless-check.js  # no-browser smoke test: play, die, restart (needs node build.js first)
+docker build -t onemore-demo . && docker run --rm -p 8080:8080 onemore-demo
+```
